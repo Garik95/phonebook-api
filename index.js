@@ -56,6 +56,15 @@ MongoClient.connect(mongo_url, (err, db) => {
             res.sendStatus(405);
         }
     });
+
+    app.get('/personal', (req,res) => {
+        dbo.collection('Personal').find(req.query).toArray((err,result) => {
+            if(err) throw err;
+            else {
+                res.send(result)
+            }
+        })
+    })
     
 });
 
