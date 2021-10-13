@@ -44,9 +44,26 @@ MongoClient.connect(mongo_url, (err, db) => {
                 res.send(result)
             }
         })
-    })
+    });
+
+    app.get('/nestedEntities', async (req, res) => {
+        if(req.query._id){
+            dbo.collection("Entities").aggregate([{$match:{"_id":ObjectID(req.query._id),"STATUS":1}},{$lookup:{from:"Personal",localField:"ID",foreignField:"DEPARTMENT_CODE",as:"DEP"}},{$project:{"ID":1,"PARENTCODE":1,"REGIONID":1,"NAME":1,TYPE:1,OPEN_TMP:1,CLOSE_TMP:1,CLOSE:{$ifNull:["$CLOSE_TMP",0]},"CNT":{$size:"$DEP"}}}]).toArray((err,result) => {
+                if (err) throw err;
+                res.send(nest(result));
+            })
+        } else {
+            res.sendStatus(405);
+        }
+    });
     
-})
+});
+
+function nest(items, ID = null, link = "PARENTCODE") {
+    return items
+        .filter(item => item[link] === ID)
+        .map(item => ({ ...item,children: nest(items, item.ID) }))
+}
 
 
 app.listen(port, () => {
