@@ -60,16 +60,7 @@ MongoClient.connect(mongo_url, (err, db) => {
     app.get('/personal', (req, res) => {
         req.query.DEPARTMENT_CODE = JSON.parse(req.query.DEPARTMENT_CODE);
         console.log(req.query);
-        dbo.collection('Personal').find({
-            DEPARTMENT_CODE: {
-              '$in': [
-                 819, 820, 821, 910, 918,
-                2020, 887, 888, 889, 890,
-                 891, 892, 893, 894, 895,
-                 896, 897, 917
-              ],
-            }
-          }, {
+        dbo.collection('Personal').find(req.query, {
               projection: {
                   "ID": 1,
                   "FIRST_NAME": 1,
@@ -80,6 +71,15 @@ MongoClient.connect(mongo_url, (err, db) => {
                   "DEPARTMENT_CODE": 1,
               }
         }).toArray((err, result) => {
+            if (err) throw err;
+            else {
+                res.send(result)
+            }
+        })
+    });
+
+    app.get('/posts',(req,res) => {
+        dbo.collection("Posts").find({}).toArray((err,result) => {
             if (err) throw err;
             else {
                 res.send(result)
