@@ -86,6 +86,45 @@ MongoClient.connect(mongo_url, (err, db) => {
                 res.send(result)
             }
         })
+    });
+
+    app.get('/birthday', (req, res) => {
+        let date = new Date();
+        let today = new Date().getDate().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'});
+        console.log(today);
+        let tomorrow = date.setHours(24);
+        console.log(today, tomorrow);
+        dbo.collection("Personal").find({
+            STATUS_CODE: {
+                $ne: 4
+            },
+            $expr: {
+                $function: {
+                    body: `function (today, day) { 
+                        
+                        let b_day = new Date(day).getDate().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'})
+                        let month = new Date().getMonth().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'})
+                        let b_month = new Date(day).getMonth().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'})
+            
+                        if (Number(today) === Number(b_day) && month === b_month) { return true }
+                        return false; 
+                    }`,
+                    args: [today, "$BIRTHDAY"],
+                    lang: "js"
+                },
+                // "$eq": [{ "$month": "$BIRTHDAY" }, 579744000000] 
+            }
+        }, { projection: {
+            _id: 1,
+            FIRST_NAME: 1,
+            BIRTHDAY: 1
+        }}).toArray((err, result) => {
+            console.log(result);
+            if (err) throw err;
+            else {
+                res.send(result)
+            }
+        })
     })
 
 });
