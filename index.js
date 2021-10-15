@@ -60,17 +60,18 @@ MongoClient.connect(mongo_url, (err, db) => {
     app.get('/personal', (req, res) => {
         req.query.DEPARTMENT_CODE = JSON.parse(req.query.DEPARTMENT_CODE);
         console.log(req.query);
-        dbo.collection('Personal').find(req.query, {
-              projection: {
-                  "ID": 1,
-                  "FIRST_NAME": 1,
-                  "FAMILY": 1,
-                  "PATRONYMIC": 1,
-                  "STATUS_CODE": 1,
-                  "POST_CODE": 1,
-                  "DEPARTMENT_CODE": 1,
-              }
-        }).toArray((err, result) => {
+        dbo.collection('Personal').find({ ...req.query, STATUS_CODE: { $ne: 4 } }, {
+            projection: {
+                "ID": 1,
+                "FIRST_NAME": 1,
+                "FAMILY": 1,
+                "PATRONYMIC": 1,
+                "STATUS_CODE": 1,
+                "POST_CODE": 1,
+                "DEPARTMENT_CODE": 1,
+                "BRANCH": 1
+            }
+        }).sort({ "POST_CODE": 1 }).toArray((err, result) => {
             if (err) throw err;
             else {
                 res.send(result)
@@ -78,8 +79,8 @@ MongoClient.connect(mongo_url, (err, db) => {
         })
     });
 
-    app.get('/posts',(req,res) => {
-        dbo.collection("Posts").find({}).toArray((err,result) => {
+    app.get('/posts', (req, res) => {
+        dbo.collection("Posts").find({}).toArray((err, result) => {
             if (err) throw err;
             else {
                 res.send(result)
