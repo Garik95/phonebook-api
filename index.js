@@ -88,46 +88,58 @@ MongoClient.connect(mongo_url, (err, db) => {
         })
     });
 
-    app.get('/birthday', (req, res) => {
-        let date = new Date();
-        let today = new Date().getDate().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'});
-        console.log(today);
-        let tomorrow = date.setHours(24);
-        console.log(today, tomorrow);
-        dbo.collection("Personal").find({
-            STATUS_CODE: {
-                $ne: 4
-            },
-            $expr: {
-                $function: {
-                    body: `function (today, day) { 
-                        
-                        let b_day = new Date(day).getDate().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'})
-                        let month = new Date().getMonth().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'})
-                        let b_month = new Date(day).getMonth().toLocaleString("en-US", {timeZone: 'Asia/Tashkent'})
-            
-                        if (Number(today) === Number(b_day) && month === b_month) { return true }
-                        return false; 
-                    }`,
-                    args: [today, "$BIRTHDAY"],
-                    lang: "js"
-                },
-                // "$eq": [{ "$month": "$BIRTHDAY" }, 579744000000] 
-            }
-        }, { projection: {
-            _id: 1,
-            FIRST_NAME: 1,
-            BIRTHDAY: 1
-        }}).toArray((err, result) => {
-            console.log(result);
+    app.get('/entities-full', (req, res) => {
+        dbo.collection("Entities").find({}).toArray((err, result) => {
             if (err) throw err;
             else {
                 res.send(result)
             }
         })
+    });
+
+    app.get('/birthday', (req, res) => {
+
+        dbo.collection("Personal").find({
+            STATUS_CODE: {
+                $ne: 4
+            },
+        }, {
+            projection: {
+                _id: 1,
+                FIRST_NAME: 1,
+                FAMILY: 1,
+                PATRONYMIC: 1,
+                DEPARTMENT_CODE: 1,
+                POST_CODE: 1,
+                BIRTHDAY: 1,
+            }
+        }).toArray((err, result) => {
+            let todays_b_days = result.filter(item => {
+                let birthday = new Date(item.BIRTHDAY);
+                let today = new Date();
+                return birthday.getMonth() === today.getMonth() && birthday.getDate() === today.getDate();
+            })
+
+            let tommorows_b_days = result.filter(item => {
+                let birthday = new Date(item.BIRTHDAY);
+                let tomorrow = new Date()
+                tomorrow.setDate(tomorrow.getDate() + 1)
+                return birthday.getMonth() === tomorrow.getMonth() && birthday.getDate() === tomorrow.getDate();
+            })
+
+
+            if (err) throw err;
+            else {
+                res.send({
+                    "today": [...todays_b_days],
+                    "tomorrow": [...tommorows_b_days]
+                })
+            }
+        })
     })
 
 });
+
 
 function nest(items, ID = null, link = "PARENTCODE") {
     return items
