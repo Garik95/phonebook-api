@@ -58,8 +58,9 @@ MongoClient.connect(mongo_url, (err, db) => {
     });
 
     app.get('/personal', (req, res) => {
-        req.query.DEPARTMENT_CODE = JSON.parse(req.query.DEPARTMENT_CODE);
-        console.log(req.query);
+        if(req.query.DEPARTMENT_CODE)
+            req.query.DEPARTMENT_CODE = JSON.parse(req.query.DEPARTMENT_CODE);
+
         dbo.collection('Personal').find({ ...req.query, STATUS_CODE: { $ne: 4 } }, {
             projection: {
                 "ID": 1,
@@ -71,10 +72,27 @@ MongoClient.connect(mongo_url, (err, db) => {
                 "DEPARTMENT_CODE": 1,
                 "BRANCH": 1
             }
-        }).sort({ "POST_CODE": 1 }).toArray((err, result) => {
+        }).sort({ "POST_CODE": 1 }).toArray((err, emps) => {
             if (err) throw err;
             else {
-                res.send(result)
+                ids = emps.map(item => {return String(item._id)});
+                dbo.collection("Phonebook").find({"PERSONAL":{$in:ids}}).toArray((err, phones) => {
+                    if (err) throw err;
+                    else {
+                        emps.forEach(emp => {
+                            ext = phones.filter(phone => {
+                                return emp._id == phone.PERSONAL
+                            })[0]
+                            emp['EXT'] = ext ? ext['EXPHONE'] : ''
+                        })
+                        res.send(emps)
+                        // console.log(phones)
+                        
+                    }
+                })
+                // dbo.collection('Phonebook').find()
+                // console.log(result);
+                // res.send(emps)
             }
         })
     });
@@ -114,6 +132,7 @@ MongoClient.connect(mongo_url, (err, db) => {
                 BIRTHDAY: 1,
             }
         }).toArray((err, result) => {
+            console.log(result);
             let todays_b_days = result.filter(item => {
                 let birthday = new Date(item.BIRTHDAY);
                 let today = new Date();
