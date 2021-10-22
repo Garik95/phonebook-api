@@ -8,6 +8,8 @@ const port = 5001
 mongo_url = 'mongodb://10.10.12.65:27017/';
 
 app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({extended:true}))
 
 app.get('/', (req, res) => {
     res.send('ok')
@@ -115,6 +117,19 @@ MongoClient.connect(mongo_url, (err, db) => {
         })
     });
 
+    app.post('/editExt',(req,res) => {
+        if(req.body._id && req.body.ext) {
+            dbo.collection("Phonebook").updateOne({"PERSONAL":req.body._id},{$set:{"PERSONAL":req.body._id,EXPHONE: req.body.ext}},{upsert:true},(err,result) => {
+                if(err) throw err;
+                else {
+                    res.send(result)
+                }
+            })
+        }else {
+            console.log("errr");
+        }
+    })
+
     app.get('/birthday', (req, res) => {
 
         dbo.collection("Personal").find({
@@ -132,7 +147,6 @@ MongoClient.connect(mongo_url, (err, db) => {
                 BIRTHDAY: 1,
             }
         }).toArray((err, result) => {
-            console.log(result);
             let todays_b_days = result.filter(item => {
                 let birthday = new Date(item.BIRTHDAY);
                 let today = new Date();
