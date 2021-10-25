@@ -86,6 +86,7 @@ MongoClient.connect(mongo_url, (err, db) => {
                                 return emp._id == phone.PERSONAL
                             })[0]
                             emp['EXT'] = ext ? ext['EXPHONE'] : ''
+                            emp['PIC'] = ext ? ext['PIC'] : ''
                         })
                         res.send(emps)
                         // console.log(phones)
@@ -147,27 +148,40 @@ MongoClient.connect(mongo_url, (err, db) => {
                 BIRTHDAY: 1,
             }
         }).toArray((err, result) => {
-            let todays_b_days = result.filter(item => {
-                let birthday = new Date(item.BIRTHDAY);
-                let today = new Date();
-                return birthday.getMonth() === today.getMonth() && birthday.getDate() === today.getDate();
-            })
-
-            let tommorows_b_days = result.filter(item => {
-                let birthday = new Date(item.BIRTHDAY);
-                let tomorrow = new Date()
-                tomorrow.setDate(tomorrow.getDate() + 1)
-                return birthday.getMonth() === tomorrow.getMonth() && birthday.getDate() === tomorrow.getDate();
-            })
-
-
-            if (err) throw err;
-            else {
-                res.send({
-                    "today": [...todays_b_days],
-                    "tomorrow": [...tommorows_b_days]
+            ids = result.map(item => {return String(item._id)});
+                dbo.collection("Phonebook").find({"PERSONAL":{$in:ids}}).toArray((err, phones) => {
+                    if (err) throw err;
+                    else {
+                        result.forEach(emp => {
+                            ext = phones.filter(phone => {
+                                return emp._id == phone.PERSONAL
+                            })[0]
+                            emp['EXT'] = ext ? ext['EXPHONE'] : ''
+                            emp['PIC'] = ext ? ext['PIC'] : ''
+                        })
+                        let todays_b_days = result.filter(item => {
+                            let birthday = new Date(item.BIRTHDAY);
+                            let today = new Date();
+                            return birthday.getMonth() === today.getMonth() && birthday.getDate() === today.getDate();
+                        })
+            
+                        let tommorows_b_days = result.filter(item => {
+                            let birthday = new Date(item.BIRTHDAY);
+                            let tomorrow = new Date()
+                            tomorrow.setDate(tomorrow.getDate() + 1)
+                            return birthday.getMonth() === tomorrow.getMonth() && birthday.getDate() === tomorrow.getDate();
+                        })
+            
+            
+                        if (err) throw err;
+                        else {
+                            res.send({
+                                "today": [...todays_b_days],
+                                "tomorrow": [...tommorows_b_days]
+                            })
+                        }
+                    }
                 })
-            }
         })
     })
 
