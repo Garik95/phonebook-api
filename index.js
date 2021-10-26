@@ -40,9 +40,6 @@ const formQuery = async function (dbo, id, size) {
     return new Promise(resolve => {
         dbo.collection('Personal').find({
             '_id': ObjectID(id),
-            STATUS_CODE: {
-                $ne: 4
-            }
         }, {
             "FIRST_NAME": 1,
             "FAMILY": 1,
@@ -78,8 +75,8 @@ const formQuery = async function (dbo, id, size) {
                                         "fuzziness": "AUTO"
                                     }
                                 }
-                            }
-                            ]
+                            },
+                            ],
                         }
                     }
                 }
@@ -99,13 +96,13 @@ MongoClient.connect(mongo_url, (err, db) => {
         const exps = async function () {
             switch (req.query.space) {
                 case 'all': {
-                    url = "http://10.10.12.99:9200/" + 'newpers/test/_search';
+                    url = "http://10.10.12.99:9200/newpers/test/_search";
                     raw = JSON.stringify({
                         "from": 0,
                         "size": req.query.size,
                         "query": {
                             "query_string": {
-                                "query": `${req.query.q}*`
+                                "query": `${req.query.q}* and !(STATUS_CODE:4)`
                             }
                         }
                     });
@@ -174,6 +171,8 @@ MongoClient.connect(mongo_url, (err, db) => {
             req.query._id = ObjectID(String(req.query._id));
         }
 
+        console.log(req.query)
+
         dbo.collection('Personal').find({ ...req.query, STATUS_CODE: { $ne: 4 } }, {
             projection: {
                 "ID": 1,
@@ -188,6 +187,7 @@ MongoClient.connect(mongo_url, (err, db) => {
         }).sort({ "POST_CODE": 1 }).toArray((err, emps) => {
             if (err) throw err;
             else {
+                console.log(emps)
                 ids = emps.map(item => { return String(item._id) });
                 dbo.collection("Phonebook").find({ "PERSONAL": { $in: ids } }).toArray((err, phones) => {
                     if (err) throw err;
