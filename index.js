@@ -244,6 +244,7 @@ MongoClient.connect(mongo_url, (err, db) => {
 
     app.get('/birthday', (req, res) => {
 
+        console.log(req.params);
         dbo.collection("Personal").find({
             STATUS_CODE: {
                 $ne: 4
@@ -257,6 +258,7 @@ MongoClient.connect(mongo_url, (err, db) => {
                 DEPARTMENT_CODE: 1,
                 POST_CODE: 1,
                 BIRTHDAY: 1,
+                BRANCH: 1
             }
         }).toArray((err, result) => {
             ids = result.map(item => { return String(item._id) });
